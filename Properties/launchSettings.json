@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "ASTAR_SPEEDTEST": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}
