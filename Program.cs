@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Text.Json;
+using System.Timers;
 
 namespace ASTAR_SPEEDTEST
 {
@@ -24,6 +26,10 @@ namespace ASTAR_SPEEDTEST
 
         private bool isDrawing = false;
         private bool drawMode = true;
+
+        public Position start = new Position(0,0);
+        public Position stop = new Position(58, 58);
+
 
         public EditorForm()
         {
@@ -150,7 +156,9 @@ namespace ASTAR_SPEEDTEST
         {
             using (Brush brush = new SolidBrush(color))
             {
-                Rectangle cellRect = new Rectangle(p.y * CellSize + (int)(size/2), p.x * CellSize + (int)(size/2), (int)(CellSize*size), (int)(CellSize*size));
+                int offset = (int) MathF.Abs(CellSize - (size * (float)CellSize)) / 2;
+
+                Rectangle cellRect = new Rectangle(p.y * CellSize + offset, p.x * CellSize + offset, (int)(CellSize*size), (int)(CellSize*size));
                 g.FillRectangle(brush, cellRect);
             }
         }
@@ -159,15 +167,42 @@ namespace ASTAR_SPEEDTEST
 
         private void RunAStar(object? sender, EventArgs e)
         {
-            DrawPath(new Position(0, 0), new Position(58, 58));
-
             Console.WriteLine("basic a* - started");
+
+            int length_sum = 0;
+
+            int iterations = 1000;
+
+            bool draw = true;
+
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            for (int i = 0; i < iterations; i++)
+            {
+                grid[start.x, stop.x] = !grid[start.x, stop.x]; //Toggle a tile in the top right corner, to prevent optimisation from the compiler
+                var p = GetPath(start, stop);
+                length_sum += p.Item1.Count;
+
+                if(i == iterations - 1 && draw)
+                {
+                    DrawPath(p.Item1, p.Item2);
+                }
+            }
+
+            stopwatch.Stop();
+            var time_sum = stopwatch.ElapsedMilliseconds;
+
+            Console.WriteLine("Iterations: " + iterations);
+            Console.WriteLine("Sum: " + time_sum + " ms");
+            Console.WriteLine("Path length: " + length_sum / iterations);
+            Console.WriteLine("Individual time: " + (time_sum / (double)iterations).ToString("F2") + " ms");
+
         }
 
-        private void DrawPath(Position start, Position stop)
+        private (List<Position>, bool) GetPath(Position start, Position stop)
         {
             bool[,] tempGrid = grid;
-
 
             Standard_ASTAR startNode = new Standard_ASTAR(start, start, stop, tempGrid);
             Standard_ASTAR stopNode = new Standard_ASTAR(stop, stop, stop, tempGrid);
@@ -175,18 +210,27 @@ namespace ASTAR_SPEEDTEST
             ASTAR_Generic<Standard_ASTAR> astarEngine = new ASTAR_Generic<Standard_ASTAR>();
             List<Standard_ASTAR> pathList = astarEngine.GetPath(startNode, stopNode);
 
+            bool found = pathList.First().Validate(stopNode);
+
+            if (found)
+                return (pathList.Select(p => p.c).ToList(), true);
+            else
+                return (new List<Position>(), false);
+        }
+
+        private void DrawPath(List<Position> list, bool found)
+        {
             Graphics g = this.CreateGraphics();
 
-
-            for (int i = 0; i < pathList.Count - 1; i++)
+            for (int i = 0; i < list.Count - 1; i++)
             {
-                Standard_ASTAR node = pathList[i];
-                Standard_ASTAR node2 = pathList[i + 1];
-
-                DrawSquare(g, node.c, 0.5f, Color.Magenta);
+                if(found)
+                    DrawSquare(g, list[i], 0.70f, Color.LimeGreen);
+                else
+                    DrawSquare(g, list[i], 0.30f, Color.Coral);
             }
 
-            Console.WriteLine(pathList.Count);
+            Console.WriteLine(list.Count + ": " + found);
             g.Dispose();
         }
 

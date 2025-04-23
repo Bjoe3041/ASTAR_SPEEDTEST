@@ -36,7 +36,7 @@
                 if (current.Validate(target))
                 {
                     //Debug.Log("success");
-                    Console.WriteLine("Success");
+                    //Console.WriteLine("Success");
                     List<T> returnList = new List<T>();
 
                     return TracePath(cameFrom, current, returnList);
@@ -54,7 +54,7 @@
 
                     if (newNode.CheckIfObstructed())
                     {
-                        Console.WriteLine("Obstructed");
+                        //Console.WriteLine("Obstructed");
 
                         // Debug.Log("obstructed");
                         closedSet.Add(newNode.GetIdentifier());
