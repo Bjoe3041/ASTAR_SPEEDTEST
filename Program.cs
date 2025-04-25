@@ -12,6 +12,8 @@ namespace ASTAR_SPEEDTEST
         {
             Console.WriteLine("Launching map editor...");
 
+            Console.ForegroundColor = ConsoleColor.Blue;
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new EditorForm());
@@ -30,6 +32,7 @@ namespace ASTAR_SPEEDTEST
         public Position start = new Position(0,0);
         public Position stop = new Position(58, 58);
 
+        public bool shouldDraw = false;
 
         public EditorForm()
         {
@@ -48,8 +51,17 @@ namespace ASTAR_SPEEDTEST
             Controls.Add(loadBtn);
 
             var runBtn = new Button() { Text = "Run A*", Location = new Point(190, GridSize * CellSize + 5) };
-            runBtn.Click += RunAStar;
+            runBtn.Click += RunAStar2;
             Controls.Add(runBtn);
+
+            var drawToggle = new CheckBox() {Text = "Draw path", Location = new Point(280, GridSize * CellSize + 5) };
+
+            drawToggle.CheckedChanged += (sender, e) =>
+            {
+                shouldDraw = drawToggle.Checked;
+            };
+
+            Controls.Add(drawToggle);
 
             // Events
             this.MouseDown += EditorForm_MouseDown;
@@ -165,15 +177,15 @@ namespace ASTAR_SPEEDTEST
 
 
 
-        private void RunAStar(object? sender, EventArgs e)
+        /*private void RunAStar(object? sender, EventArgs e)
         {
             Console.WriteLine("basic a* - started");
 
             int length_sum = 0;
 
-            int iterations = 1000;
+            int iterations = 20000;
 
-            bool draw = true;
+            bool draw = shouldDraw;
 
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -198,7 +210,64 @@ namespace ASTAR_SPEEDTEST
             Console.WriteLine("Path length: " + length_sum / iterations);
             Console.WriteLine("Individual time: " + (time_sum / (double)iterations).ToString("F2") + " ms");
 
+            Console.WriteLine("Inspected " + GetPathNodeCount(start, stop) + " nodes.");
+        }*/
+
+
+        private void RunAStar2(object? sender, EventArgs e)
+        {
+            for (int _i = 0; _i < 6; _i++)
+            {
+
+            
+
+            Console.WriteLine("\nModified A* - started\nMap: Two Paths\n");
+
+            int length_sum = 0;
+            int iterations = 5000;
+            bool draw = shouldDraw;
+
+            List<double> timings = new List<double>();
+            double tickToMs = 1000.0 / Stopwatch.Frequency;
+
+            Stopwatch overallStopwatch = new Stopwatch();
+            overallStopwatch.Start();
+
+            for (int i = 0; i < iterations; i++)
+            {
+                grid[start.x, stop.x] = !grid[start.x, stop.x]; // Toggle a tile in the top right corner
+
+                Stopwatch sw = Stopwatch.StartNew();
+                var p = GetPath(start, stop);
+                sw.Stop();
+
+                double elapsedMs = sw.ElapsedTicks * tickToMs;
+                timings.Add(elapsedMs);
+
+                length_sum += p.Item1.Count;
+
+                if (i == iterations - 1 && draw)
+                {
+                    DrawPath(p.Item1, p.Item2);
+                }
+            }
+
+            overallStopwatch.Stop();
+
+            double totalTime = overallStopwatch.ElapsedMilliseconds;
+            double averageTime = timings.Average();
+            double stdDev = Math.Sqrt(timings.Sum(t => Math.Pow(t - averageTime, 2)) / timings.Count);
+
+            Console.WriteLine("Iterations: " + iterations);
+            Console.WriteLine("Total time: " + totalTime + " ms");
+            Console.WriteLine("Average path length: " + (length_sum / iterations));
+            Console.WriteLine("Average time: " + averageTime.ToString("F2") + " ms");
+            Console.WriteLine("Standard deviation: " + stdDev.ToString("F2") + " ms");
+
+            Console.WriteLine("Inspected " + GetPathNodeCount(start, stop) + " nodes.");
+            }
         }
+
 
         private (List<Position>, bool) GetPath(Position start, Position stop)
         {
@@ -217,6 +286,21 @@ namespace ASTAR_SPEEDTEST
             else
                 return (new List<Position>(), false);
         }
+
+
+        private int GetPathNodeCount(Position start, Position stop)
+        {
+            bool[,] tempGrid = grid;
+
+            Standard_ASTAR startNode = new Standard_ASTAR(start, start, stop, tempGrid);
+            Standard_ASTAR stopNode = new Standard_ASTAR(stop, stop, stop, tempGrid);
+
+            ASTAR_Generic<Standard_ASTAR> astarEngine = new ASTAR_Generic<Standard_ASTAR>();
+            int c = astarEngine.GetPath_NodeCount(startNode, stopNode);
+
+            return c;
+        }
+
 
         private void DrawPath(List<Position> list, bool found)
         {

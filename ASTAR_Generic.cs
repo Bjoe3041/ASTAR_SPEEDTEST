@@ -73,6 +73,81 @@
             return new List<T>();
         }
 
+        public int GetPath_NodeCount(INode origin, INode target)
+        {
+            PriorityQueue<T> openSet = new PriorityQueue<T>();
+            HashSet<string> closedSet = new HashSet<string>();
+            Dictionary<T, T> cameFrom = new Dictionary<T, T>();
+
+            int nodeCount = 0;
+
+            int attempts = 7000;
+
+            openSet.Enqueue((T)origin, origin.Heuristic());
+            closedSet.Add(origin.GetIdentifier());
+
+            T latest = (T)origin;
+
+            while (attempts > 0)
+            {
+                //Debug.Log("openSet " + openSet.Count);
+                //Debug.Log("closedSet " + closedSet.Count);
+                //Debug.Log("cameFrom " + cameFrom.Count);
+
+                nodeCount = closedSet.Count;
+
+                attempts--;
+
+                if (openSet.Count == 0)
+                {
+                    return nodeCount;
+                }
+
+                T current = openSet.Dequeue();
+
+                latest = current;
+
+                if (current.Validate(target))
+                {
+                    //Debug.Log("success");
+                    //Console.WriteLine("Success");
+                    List<T> returnList = new List<T>();
+
+                    return nodeCount;
+                }
+
+                foreach (T newNode in current.GetNeighbours())
+                {
+                    if (closedSet.Contains(newNode.GetIdentifier()))
+                    {
+                        //Console.WriteLine("Dublicate");
+
+                        //Debug.Log("dublicate");
+                        continue;
+                    }
+
+                    if (newNode.CheckIfObstructed())
+                    {
+                        //Console.WriteLine("Obstructed");
+
+                        // Debug.Log("obstructed");
+                        closedSet.Add(newNode.GetIdentifier());
+                        continue;
+                    }
+
+                    cameFrom.Add(newNode, current);
+                    openSet.Enqueue(newNode, newNode.Heuristic());
+                    closedSet.Add(newNode.GetIdentifier());
+
+                }
+            }
+
+            Console.WriteLine("Not found...");
+
+            return nodeCount;
+        }
+
+
         List<T> TracePath(Dictionary<T, T> traceDict, T i, List<T> returnList)
         {
             HashSet<T> visited = new HashSet<T>();

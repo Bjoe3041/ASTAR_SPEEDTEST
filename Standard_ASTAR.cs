@@ -25,7 +25,7 @@ namespace ASTAR_SPEEDTEST
             this.c = c;
             this.o = o;
             this.t = t;
-            this.accumulatedWeight = accumulatedWeight + 1;
+            this.accumulatedWeight = accumulatedWeight;
             this.grid = grid;
 
             //Debug.DrawRay((Vector2)c, Vector2.up * 0.3f, Color.blue);
@@ -51,7 +51,7 @@ namespace ASTAR_SPEEDTEST
                 }
                 else
                 {
-                    neighbours.Add(new Standard_ASTAR(newPos, o, t, accumulatedWeight, grid));
+                    neighbours.Add(new Standard_ASTAR(newPos, o, t, accumulatedWeight + 1, grid));
                 }
             }
 
@@ -88,40 +88,41 @@ namespace ASTAR_SPEEDTEST
         public float Heuristic()
         {
             //float h = Vector2.Distance(c, o);
-            float h = 0; //only accu
+            //float h = 0 + accumulatedWeight * 0.78f;
             //float g = Vector2.Distance(c, t);
 
             //float g = MathF.Abs(c.x - t.x) + MathF.Abs(c.y - t.y); //manhattan            
             //float g = 0;
 
-            float g =  MathF.Sqrt(MathF.Pow(c.x - t.x, 2) + MathF.Pow(c.y - t.y, 2)); //true distance
+            //float g =  MathF.Sqrt(MathF.Pow(c.x - t.x, 2) + MathF.Pow(c.y - t.y, 2)); //true distance
             //g = g * g;
             //float g = (c.x - t.x) * (c.x - t.x) + (c.y - t.y) * (c.y - t.y); //distance, unsquared
             //h = ((c.x - o.x) * (c.x - o.x) + (c.y - o.y) * (c.y - o.y)) * 0.05f; //distance, unsquared
             //g = g * 0.01f;
 
-            //g = FastInvSqrt(g);
-            float FastSqrt(float x)
-            {
-                return x * FastInvSqrt(x);
-            }
-            float FastInvSqrt(float x)
-            {
-                unsafe
-                {
-                    float xhalf = 0.5f * x;
-                    int i = *(int*)&x;
-                    i = 0x5f3759df - (i >> 1);
-                    x = *(float*)&i;
-                    x = x * (1.5f - xhalf * x * x); // One iteration of Newton-Raphson
-                    return x;
-                }
-            }
-
             //Debug.Log("Heu: " + (h + g + accumulatedWeight));
             //Debug.Log("Accu: " + (accumulatedWeight * 1));
 
-            return h + g + accumulatedWeight * 0.78f;
+            //Breadth first
+            //float from_start = accumulatedWeight * 1f;
+            //float to_goal = 0; 
+
+            //Basic A*
+            //float from_start = accumulatedWeight * 1f;
+            //float to_goal = MathF.Abs(c.x - t.x) + MathF.Abs(c.y - t.y); //manhattan distance
+
+            //A* Shifted towards end
+            float from_start = accumulatedWeight * 0.78f;
+            float to_goal = MathF.Abs(c.x - t.x) + MathF.Abs(c.y - t.y); //manhattan distance           
+
+            //Pretty A*
+            //float from_start = accumulatedWeight * 1f;
+            //float to_goal =  MathF.Sqrt(MathF.Pow(c.x - t.x, 2) + MathF.Pow(c.y - t.y, 2)); //true distance
+            
+
+
+            return from_start + to_goal;
+            //return h + g + accumulatedWeight * 0.78f;
         }
 
         public bool Validate(INode t)
